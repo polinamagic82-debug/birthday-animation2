@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Happy Birthday!</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    overflow: hidden;
+    background: #369de8;
+}
+
+canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+}
+</style>
+</head>
+
+<body>
+<canvas id="canvas"></canvas>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+let W, H;
+let balloons = [];
+let startTime = performance.now();
+
+const COLORS = [
+    "#ff3c50",
+    "#28aaff",
+    "#28dc82",
+    "#ffbe28",
+    "#b450ff",
+    "#ff64be",
+    "#1edce6"
+];
+
+const FONT = {
+    H: ["10001","10001","10001","11111","10001","10001","10001"],
+    A: ["01110","10001","10001","11111","10001","10001","10001"],
+    P: ["11110","10001","10001","11110","10000","10000","10000"],
+    Y: ["10001","10001","01010","00100","00100","00100","00100"],
+    B: ["11110","10001","10001","11110","10001","10001","11110"],
+    I: ["11111","00100","00100","00100","00100","00100","11111"],
+    R: ["11110","10001","10001","11110","10100","10010","10001"],
+    T: ["11111","00100","00100","00100","00100","00100","00100"],
+    D: ["11110","10001","10001","10001","10001","10001","11110"]
+};
+
+function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+
+    createBalloons();
+}
+
+window.addEventListener("resize", resize);
+
+function createWord(word, y, scale) {
+    const totalWidth = word.length * 6 * scale;
+    const startX = (W - totalWidth) / 2;
+
+    for (let i = 0; i < word.length; i++) {
+        const pattern = FONT[word[i]];
+
+        for (let row = 0; row < 7; row++) {
+            for (let col = 0; col < 5; col++) {
+
+                if (pattern[row][col] === "1") {
+                    const x = startX + (i * 6 + col) * scale;
+                    const yy = y + row * scale;
+
+                    balloons.push({
+                        x,
+                        y: yy,
+                        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+                        delay: Math.random() * 2400,
+                        size: 10 + Math.random() * 3
+                    });
+                }
+            }
+        }
+    }
+}
+
+function createBalloons() {
+    balloons = [];
+
+    const scale = Math.min(W / 65, H / 45, 13);
+
+    createWord("HAPPY", H * 0.18, scale);
+    createWord("BIRTHDAY", H * 0.53, scale * 0.92);
+
+    startTime = performance.now();
+}
+
+function drawBackground() {
+    const gradient = ctx.createLinearGradient(0, 0, 0, H);
+
+    gradient.addColorStop(0, "#1e64e6");
+    gradient.addColorStop(1, "#aadeff");
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, W, H);
+}
+
+function drawBalloon(x, y, color, size) {
+    if (size <= 0) return;
+
+    // Шарик
+    ctx.beginPath();
+    ctx.ellipse(
+        x, y, size / 2, size / 1.5,
+        0, 0, Math.PI * 2
+    );
+
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    // Блик
+    ctx.beginPath();
+    ctx.ellipse(
+        x - size / 5,
+        y - size / 4,
+        size / 10,
+        size / 6,
+        -0.3, 0, Math.PI * 2
+    );
+
+    ctx.fillStyle = "rgba(255,255,255,0.8)";
+    ctx.fill();
+
+    // Нить
+    ctx.beginPath();
+    ctx.moveTo(x, y + size / 1.5);
+    ctx.quadraticCurveTo(
+        x + 5, y + size,
+        x + 2, y + size * 2
+    );
+
+    ctx.strokeStyle = "rgba(40,40,80,0.7)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+}
+
+function animate(now) {
+    drawBackground();
+
+    const elapsed = now - startTime;
+
+    balloons.forEach(balloon => {
+        const progress = Math.max(
+            0,
+            Math.min(1, (elapsed - balloon.delay) / 1800)
+        );
+
+        if (progress > 0) {
+            const floating =
+                Math.sin(elapsed / 400 + balloon.x) * 3;
+
+            const currentY =
+                balloon.y + (1 - progress) * 250 + floating;
+
+            drawBalloon(
+                balloon.x,
+                currentY,
+                balloon.color,
+                balloon.size * progress
+            );
+        }
+    });
+
+    requestAnimationFrame(animate);
+}
+
+resize();
+requestAnimationFrame(animate);
+
+</script>
+</body>
+</html>
